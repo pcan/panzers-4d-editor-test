@@ -1,0 +1,49 @@
+#define MaxBones 21
+const float4x4 skinMatrices[MaxBones] : register( c8 );
+
+struct appin
+{
+    float4 Position    : POSITION;
+    float4 Color0    : COLOR0;
+    float4 Normal    : NORMAL;
+};
+
+
+struct vertout
+{
+    float4 Position  : POSITION;
+    float4 Color0    : COLOR0;
+};
+
+
+
+float4 GetSkinned(float4 point, float4 SkinWeights, float4 SkinIndices )
+{
+     return SkinWeights.x * mul(skinMatrices[SkinIndices.x], point) +
+            SkinWeights.y * mul(skinMatrices[SkinIndices.y], point) +
+            SkinWeights.z * mul(skinMatrices[SkinIndices.z], point) +
+            SkinWeights.w * mul(skinMatrices[SkinIndices.w], point) ;
+}
+
+
+vertout main(appin IN,
+            float4 boneIndexes,
+            float4 boneWeights,
+            uniform float4x4 ModelViewProj)
+{
+    vertout OUT;
+
+    ModelViewProj = glstate.matrix.mvp;
+
+    float4 SkinnedPos =  GetSkinned(IN.Position, boneWeights, boneIndexes);
+    SkinnedPos.w = 1.0;
+    //float3 SkinnedNor = mul( float3(IN.Normal), (float3x3)SkinMatrix );
+
+    OUT.Position = mul(ModelViewProj, SkinnedPos);
+
+
+    //Compute color from temperature, weight
+    OUT.Color0 = IN.Color0;
+
+    return OUT;
+}
